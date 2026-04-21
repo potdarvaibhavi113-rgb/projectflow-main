@@ -1,0 +1,225 @@
+{% extends 'base.html' %}
+{% block title %}{{ project.name }}{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <div>
+        <h1 style="margin-bottom: 0.25rem;">{{ project.name }}</h1>
+        <span class="project-status" style="display: inline-block;">
+            {% if project.status == 'active' %}🔵 Active
+            {% elif project.status == 'completed' %}✅ Completed
+            {% else %}⏸️ On Hold
+            {% endif %}
+            <a href="{% url 'project_edit' project.pk %}" style="margin-left: 0.5rem; color: #6c757d;"><i class="fas fa-pencil-alt"></i></a>
+        </span>
+    </div>
+    <div>
+        <a href="{% url 'project_edit' project.pk %}" class="btn-icon"><i class="fas fa-edit"></i> Edit</a>
+        <a href="{% url 'project_delete' project.pk %}" class="btn-icon" style="color: #dc3545;"><i class="fas fa-trash"></i> Delete</a>
+        <a href="{% url 'home' %}" class="btn-icon">← Back to Dashboard</a>
+    </div>
+</div>
+<p style="color: #6c757d; margin-bottom: 2rem;">{{ project.description }}</p>
+
+<!-- Progress Bar -->
+<div style="margin-bottom: 2rem;">
+    <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 0.5rem;">
+        <span>Overall Progress</span>
+        <span>{{ project.progress }}%</span>
+    </div>
+    <div class="progress-bar-container">
+        <div class="progress-bar-fill" style="width: {{ project.progress }}%;"></div>
+    </div>
+</div>
+
+<!-- Add Task Quick Form -->
+<div style="background: white; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+    <h3 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+        <i class="fas fa-plus-circle" style="color: #007bff;"></i> Add New Task
+    </h3>
+    
+    <!-- Error Popup Style Message -->
+    {% if task_form.errors %}
+        <div style="background: #f8d7da; color: #721c24; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border-left: 4px solid #dc3545; display: flex; align-items: center; gap: 0.5rem;">
+            <i class="fas fa-exclamation-circle" style="font-size: 1.2rem;"></i>
+            <div>
+                <strong>Please fix the following errors:</strong>
+                <ul style="margin: 0.5rem 0 0 1.2rem;">
+                    {% for field, errors in task_form.errors.items %}
+                        {% for error in errors %}
+                            <li><strong>{{ field|capfirst }}:</strong> {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+            </div>
+            <button onclick="this.parentElement.style.display='none'" style="margin-left: auto; background: none; border: none; color: #721c24; cursor: pointer; font-size: 1.2rem;">&times;</button>
+        </div>
+    {% endif %}
+    
+    <form method="post" action="{% url 'task_create' project.pk %}">
+        {% csrf_token %}
+        <div style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 1rem; align-items: end;">
+            <div>
+                <label for="{{ task_form.title.id_for_label }}" style="display: block; margin-bottom: 0.25rem; font-weight: 500;">Task Title</label>
+                {{ task_form.title }}
+            </div>
+            <div>
+                <label for="{{ task_form.assigned_to.id_for_label }}" style="display: block; margin-bottom: 0.25rem; font-weight: 500;">Assign To</label>
+                {{ task_form.assigned_to }}
+            </div>
+            <div>
+                <label for="{{ task_form.due_date.id_for_label }}" style="display: block; margin-bottom: 0.25rem; font-weight: 500;">Due Date</label>
+                {{ task_form.due_date }}
+            </div>
+            <button type="submit" class="btn-primary" style="width: auto; padding: 0.5rem 1.5rem; white-space: nowrap;">
+                <i class="fas fa-plus"></i> Add Task
+            </button>
+        </div>
+        <div style="margin-top: 1rem;">
+            <label for="{{ task_form.description.id_for_label }}" style="display: block; margin-bottom: 0.25rem; font-weight: 500;">Description (optional)</label>
+            {{ task_form.description }}
+        </div>
+    </form>
+</div>
+
+<!-- Kanban Board (Three Columns) -->
+<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem;">
+    <!-- To Do Column -->
+    <div data-column="todo"  style="background: #f1f3f5; border-radius: 12px; padding: 1rem;">
+        <h3 style="margin-bottom: 1rem; color: #495057;">📋 To Do</h3>
+        <div class="column-body">
+        {% for task in todo_tasks %}
+            {% include 'projects/task_card.html' with task=task %}
+        {% empty %}
+            <p style="color: #adb5bd; text-align: center; padding: 1rem;">No tasks</p>
+        {% endfor %}
+        </div>
+    </div>
+    
+    <!-- In Progress Column -->
+    <div data-column="todo"  style="background: #f1f3f5; border-radius: 12px; padding: 1rem;">
+        <h3 style="margin-bottom: 1rem; color: #495057;">⚙️ In Progress</h3>
+        <div class="column-body">
+        {% for task in in_progress_tasks %}
+            {% include 'projects/task_card.html' with task=task %}
+        {% empty %}
+            <p style="color: #adb5bd; text-align: center; padding: 1rem;">No tasks</p>
+        {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Done Column -->
+    <div data-column="todo"  style="background: #f1f3f5; border-radius: 12px; padding: 1rem;">
+        <h3 style="margin-bottom: 1rem; color: #495057;">✅ Done</h3>
+        <div class="column-body">
+        {% for task in done_tasks %}
+            {% include 'projects/task_card.html' with task=task %}
+        {% empty %}
+            <p style="color: #adb5bd; text-align: center; padding: 1rem;">No tasks</p>
+        {% endfor %}
+        </div>
+    </div>
+</div>
+<script>
+    const projectId = {{ project.id }};
+    const wsScheme = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const wsUrl = `${wsScheme}://${window.location.host}/ws/project/${projectId}/`;
+    
+    let socket = null;
+    
+    function connectWebSocket() {
+        socket = new WebSocket(wsUrl);
+        
+        socket.onopen = function(e) {
+            console.log('WebSocket connected');
+        };
+        
+        socket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            console.log('Received update:', data);
+            handleUpdate(data);
+        };
+        
+        socket.onclose = function(e) {
+            console.log('WebSocket closed, reconnecting in 3s...');
+            setTimeout(connectWebSocket, 3000);
+        };
+        
+        socket.onerror = function(e) {
+            console.error('WebSocket error');
+        };
+    }
+    
+    function handleUpdate(update) {
+    if (update.type !== 'comment_added') {
+        // For task changes, reload the page to show updated board
+        location.reload();
+    } else {
+        // Handle comment addition without reload (as above)
+        addCommentToTask(update.task_id, update.comment_id, update.username, update.content, update.created_at);
+    }
+}
+    
+    // These functions will manipulate the DOM
+    function addTaskToBoard(id, title, status, assigned_to, due_date) {
+        // Create a new task card element (simplified – we'll fetch full HTML via AJAX or build it)
+        // For simplicity, we'll reload the board on task creation for now
+        // In production you'd build the card with JS, but let's keep it simple:
+        location.reload(); // temporary – we can improve later
+    }
+    
+    function updateTaskOnBoard(id, title, status, assigned_to, due_date) {
+        const card = document.querySelector(`[data-task-id="${id}"]`);
+        if (card) {
+            // Update title, assigned, due date
+            card.querySelector('.task-title').textContent = title;
+            // Update status column (move card)
+            moveCardToColumn(card, status);
+        }
+    }
+    
+    function removeTaskFromBoard(id) {
+        const card = document.querySelector(`[data-task-id="${id}"]`);
+        if (card) card.remove();
+    }
+    
+    function addCommentToTask(taskId, commentId, username, content, created_at) {
+        const commentsDiv = document.querySelector(`#comments-${taskId}`);
+        if (commentsDiv) {
+            const commentHtml = `
+                <div style="background: #f8f9fa; padding: 0.5rem; border-radius: 4px; margin-bottom: 0.3rem;">
+                    <strong>${username}</strong>: ${content}
+                    <div style="font-size: 0.7rem; color: #adb5bd;">just now</div>
+                </div>
+            `;
+            commentsDiv.insertAdjacentHTML('beforeend', commentHtml);
+            // Update comment count
+            const btn = document.querySelector(`button[onclick*="comments-${taskId}"]`);
+            if (btn) {
+                const countSpan = btn.querySelector('.comment-count') || document.createElement('span');
+                const currentCount = parseInt(btn.textContent.match(/\d+/)?.[0] || 0);
+                btn.innerHTML = `<i class="fas fa-comment"></i> Comments (${currentCount + 1})`;
+            }
+        }
+    }
+    
+    function moveCardToColumn(card, newStatus) {
+        const columns = {
+            'todo': document.querySelector('[data-column="todo"] .column-body'),
+            'in_progress': document.querySelector('[data-column="in_progress"] .column-body'),
+            'done': document.querySelector('[data-column="done"] .column-body')
+        };
+        if (columns[newStatus]) {
+            columns[newStatus].appendChild(card);
+        }
+    }
+    
+    function updateProgress() {
+        // Could fetch new progress via AJAX or just recalc from tasks
+        location.reload(); // temporary
+    }
+    
+    // Initialize connection when page loads
+    connectWebSocket();
+</script>
+{% endblock %}
