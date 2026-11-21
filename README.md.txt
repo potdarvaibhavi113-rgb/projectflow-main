@@ -20,7 +20,7 @@ TOOLS & TECHNOLOGIES USED:
 --------------------------
 - Web Framework: Django / Django REST Framework
 - Programming: Python
-- Database: MySQL (via XAMPP / MariaDB)
+- Database: MySQL (via XAMPP)
 - API Security: JWT (JSON Web Tokens) for Authentication
 - Environment: Python Virtual Environment
 
