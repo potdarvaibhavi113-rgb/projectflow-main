@@ -1,5 +1,5 @@
 ============================================================
-PROJECT MANAGEMENT TOOL - INTERNSHIP PROJECT SUBMISSION
+PROJECT MANAGEMENT TOOL 
 ============================================================
 
 DEVELOPER INFORMATION:
